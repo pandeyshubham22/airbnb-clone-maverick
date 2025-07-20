@@ -109,8 +109,8 @@ app.delete("/listings/:id/reviews/:reviewId", wrapAsync( async (req,res)=>{
 //     res.status(statusCode).send(message);
 // })
 
-const port = process.env.PORT || 3000;
-app.listen(port,()=>{
+// const port = process.env.PORT || 3000;
+app.listen("8080",()=>{
     console.log("server is listening");
 })
 
