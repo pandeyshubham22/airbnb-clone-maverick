@@ -40,7 +40,7 @@ router.get("/:id", wrapAsync(async (req,res)=>{
 }));
 
 //create route
-router.post("/listings", validateReview, wrapAsync(async (req, res)=>{
+router.post("/listings", wrapAsync(async (req, res)=>{
     let newListing= new Listing(req.body.listing);
     await newListing.save();
     req.flash("success","new listing created");
