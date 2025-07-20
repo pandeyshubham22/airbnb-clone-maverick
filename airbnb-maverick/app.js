@@ -18,28 +18,8 @@ const LocalStrategy= require("passport-local");
 const User= require("./models/user.js");
 const user = require("./models/user.js");
 
-// Completely disable CSP
-app.use((req, res, next) => {
-  // Remove any CSP headers that might be set by hosting provider
-  res.removeHeader('Content-Security-Policy');
-  res.removeHeader('Content-Security-Policy-Report-Only');
-  res.removeHeader('X-Content-Security-Policy');
-  res.removeHeader('X-WebKit-CSP');
-  
-  // Override with response interceptor to ensure CSP is not set later
-  const originalSetHeader = res.setHeader;
-  res.setHeader = function(name, value) {
-    if (name.toLowerCase().includes('content-security-policy')) {
-      return;
-    }
-    return originalSetHeader.call(this, name, value);
-  };
-  
-  next();
-});
-
 const sessionOptions={
-  secret:"mysecretkey",
+  secret: process.env.SESSION_SECRET || "mysecretkey",
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -60,6 +40,7 @@ passport.deserializeUser(User.deserializeUser());
 app.use((req,res,next)=>{
   res.locals.success = req.flash("success");
   res.locals.error=req.flash("error");
+  res.locals.currUser = req.user;
   next();
 })
 
@@ -67,10 +48,9 @@ app.use(express.urlencoded({extended:true}));
 app.use(methodOverride("_method"));
 app.engine("ejs",ejsMate);
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.static("public"));
 app.use(express.json());
 
-main().then(()=>{console.log("connecton successful")})
+main().then(()=>{console.log("connection successful")})
 .catch(err => console.log(err));
 
 async function main() {
@@ -88,40 +68,41 @@ app.set("views",path.join(__dirname,"views"));
 //   let registeredUser= await User.register(fakeUser,"helloworld");
 //   res.send(registeredUser);
 // })
-
-app.use("/listings",listingRouter);
-app.use("/", userRouter);
-
 app.get("/", (req, res) => {
   res.redirect("/listings");
 });
 
+app.use("/listings",listingRouter);
+app.use("/", userRouter);
+
+
 //review route
-app.post("/listings/:id/reviews",async(req,res)=>{
+app.post("/listings/:id/reviews", wrapAsync(async(req,res)=>{
    let listing= await Listing.findById(req.params.id);
    let newReview= new Review(req.body.review);
    listing.reviews.push(newReview);
    await newReview.save(); 
    await listing.save(); 
- res.redirect(`/listings/${listing._id}`);
-//   res.send("saved");
-})
+   req.flash("success", "New review created!");
+   res.redirect(`/listings/${listing._id}`);
+}));
 
 //delete review route
 app.delete("/listings/:id/reviews/:reviewId", wrapAsync( async (req,res)=>{
     let{id,reviewId}= req.params;
     await Listing.findByIdAndUpdate(id,{$pull: {reviews:reviewId}});
     await Review.findByIdAndDelete(reviewId);
+    req.flash("success", "Review deleted!");
     res.redirect(`/listings/${id}`);
-})
-)
+}));
 
 // app.all("*",(req,res,next)=>{
 //     next(new ExpressError(404,"Page Not Found"));
 // })
+
 // app.use((err,req,res,next)=>{
-//     let{statusCode=505, message="Something went wrong"}= err;
-//     res.status(statusCode).send(message);
+//     let{statusCode=500, message="Something went wrong"}= err;
+//     res.status(statusCode).render("error.ejs", {message});
 // })
 
 // Use environment port for Render deployment
