@@ -6,13 +6,13 @@ const ExpressError= require("../utils/ExpressError.js");
 const Listing= require("../models/listing.js");
 
 
-const validateReview =(req,res,next)=>{
-    let{error}=review.Schema.validate(req.body);
-    if(error){
-        let errMsg= error.details.map((el)=>el.message).join(",");
-        throw new ExpressError(400,errMsg);
-    }else{next();}
-}
+// const validateReview =(req,res,next)=>{
+//     let{error}=review.Schema.validate(req.body);
+//     if(error){
+//         let errMsg= error.details.map((el)=>el.message).join(",");
+//         throw new ExpressError(400,errMsg);
+//     }else{next();}
+// }
 
 
 //index route
