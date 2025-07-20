@@ -1,7 +1,4 @@
-// First install helmet: npm install helmet
-
 const express= require("express");
-const helmet = require("helmet");
 const app= express();
 const mongoose= require("mongoose");
 const Listing= require("./models/listing.js");
@@ -21,22 +18,25 @@ const LocalStrategy= require("passport-local");
 const User= require("./models/user.js");
 const user = require("./models/user.js");
 
-// Configure Helmet with CSP
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-      imgSrc: ["'self'", "data:", "https:", "http:"],
-      connectSrc: ["'self'", "https:"],
-      mediaSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      frameSrc: ["'self'"]
+// Completely disable CSP
+app.use((req, res, next) => {
+  // Remove any CSP headers that might be set by hosting provider
+  res.removeHeader('Content-Security-Policy');
+  res.removeHeader('Content-Security-Policy-Report-Only');
+  res.removeHeader('X-Content-Security-Policy');
+  res.removeHeader('X-WebKit-CSP');
+  
+  // Override with response interceptor to ensure CSP is not set later
+  const originalSetHeader = res.setHeader;
+  res.setHeader = function(name, value) {
+    if (name.toLowerCase().includes('content-security-policy')) {
+      return;
     }
-  }
-}));
+    return originalSetHeader.call(this, name, value);
+  };
+  
+  next();
+});
 
 const sessionOptions={
   secret:"mysecretkey",
@@ -74,7 +74,7 @@ main().then(()=>{console.log("connecton successful")})
 .catch(err => console.log(err));
 
 async function main() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/Maverick');
+  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/Maverick');
 }
 
 app.set("view engine","ejs");
@@ -124,7 +124,8 @@ app.delete("/listings/:id/reviews/:reviewId", wrapAsync( async (req,res)=>{
 //     res.status(statusCode).send(message);
 // })
 
-// const port = process.env.PORT || 3000;
-app.listen("8080",()=>{
-    console.log("server is listening");
+// Use environment port for Render deployment
+const port = process.env.PORT || 8080;
+app.listen(port, ()=>{
+    console.log(`server is listening on port ${port}`);
 })
