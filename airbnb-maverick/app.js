@@ -62,9 +62,7 @@ async function main() {
 app.set("view engine","ejs");
 app.set("views",path.join(__dirname,"views"));
 
-app.get("/",(req,res)=>{
-    res.send("its working");
-})
+
 
 // app.get("/demouser", async( req, res)=>{
 //   let fakeUser= new User({
