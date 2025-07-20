@@ -75,6 +75,10 @@ app.set("views",path.join(__dirname,"views"));
 
 app.use("/listings",listingRouter);
 app.use("/", userRouter);
+
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 //review route
 app.post("/listings/:id/reviews",async(req,res)=>{
    let listing= await Listing.findById(req.params.id);
@@ -106,7 +110,8 @@ app.delete("/listings/:id/reviews/:reviewId", wrapAsync( async (req,res)=>{
 // })
 
 
-app.listen("8080",()=>{
-    console.log("server is listening");
-})
+// app.listen("8080",()=>{
+//     console.log("server is listening");
+// })
+const port = process.env.PORT || 3000;
 
