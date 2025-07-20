@@ -1,4 +1,7 @@
+// First install helmet: npm install helmet
+
 const express= require("express");
+const helmet = require("helmet");
 const app= express();
 const mongoose= require("mongoose");
 const Listing= require("./models/listing.js");
@@ -18,6 +21,22 @@ const LocalStrategy= require("passport-local");
 const User= require("./models/user.js");
 const user = require("./models/user.js");
 
+// Configure Helmet with CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https:", "http:"],
+      connectSrc: ["'self'", "https:"],
+      mediaSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameSrc: ["'self'"]
+    }
+  }
+}));
 
 const sessionOptions={
   secret:"mysecretkey",
@@ -27,12 +46,11 @@ const sessionOptions={
     expires: Date.now()+ 7*24*60*60*1000,
     maxAge: 7*24*60*60*1000,
     httpOnly: true,
-
   }
 }
+
 app.use(session(sessionOptions));
 app.use(flash());
-
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
@@ -44,13 +62,13 @@ app.use((req,res,next)=>{
   res.locals.error=req.flash("error");
   next();
 })
+
 app.use(express.urlencoded({extended:true}));
 app.use(methodOverride("_method"));
 app.engine("ejs",ejsMate);
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static("public"));
 app.use(express.json());
-
 
 main().then(()=>{console.log("connecton successful")})
 .catch(err => console.log(err));
@@ -61,8 +79,6 @@ async function main() {
 
 app.set("view engine","ejs");
 app.set("views",path.join(__dirname,"views"));
-
-
 
 // app.get("/demouser", async( req, res)=>{
 //   let fakeUser= new User({
@@ -79,6 +95,7 @@ app.use("/", userRouter);
 app.get("/", (req, res) => {
   res.redirect("/listings");
 });
+
 //review route
 app.post("/listings/:id/reviews",async(req,res)=>{
    let listing= await Listing.findById(req.params.id);
@@ -102,8 +119,6 @@ app.delete("/listings/:id/reviews/:reviewId", wrapAsync( async (req,res)=>{
 // app.all("*",(req,res,next)=>{
 //     next(new ExpressError(404,"Page Not Found"));
 // })
-
-
 // app.use((err,req,res,next)=>{
 //     let{statusCode=505, message="Something went wrong"}= err;
 //     res.status(statusCode).send(message);
@@ -113,5 +128,3 @@ app.delete("/listings/:id/reviews/:reviewId", wrapAsync( async (req,res)=>{
 app.listen("8080",()=>{
     console.log("server is listening");
 })
-
-
